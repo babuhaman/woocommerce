@@ -41,7 +41,6 @@ export const VariationQuickUpdateMenuItem: React.FC< MenuItemProps > & {
 	group = TOP_LEVEL_MENU,
 	supportsMultipleSelection,
 	onClick = () => {},
-	isCustomGroup = false,
 } ) => {
 	const getProps = (
 		fillProps: Fill.Props & VariationQuickUpdateSlotProps
