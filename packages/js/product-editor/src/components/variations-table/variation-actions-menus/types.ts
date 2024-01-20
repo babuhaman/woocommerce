@@ -23,6 +23,7 @@ export type VariationQuickUpdateSlotProps = {
 };
 
 export type MenuItemProps = {
+	isCustomGroup?: boolean;
 	children?: React.ReactNode;
 	order?: number;
 	group?: string;

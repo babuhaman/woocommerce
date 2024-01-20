@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { Slot, Fill, MenuItem, MenuGroup } from '@wordpress/components';
+import { Slot, Fill, MenuGroup, MenuItem } from '@wordpress/components';
 import { createElement, Fragment } from '@wordpress/element';
 import {
 	createOrderedChildren,
@@ -41,18 +41,33 @@ export const VariationQuickUpdateMenuItem: React.FC< MenuItemProps > & {
 	group = TOP_LEVEL_MENU,
 	supportsMultipleSelection,
 	onClick = () => {},
+	isCustomGroup = false,
 } ) => {
-	const handleClick =
-		( fillProps: Fill.Props & VariationQuickUpdateSlotProps ) => () => {
-			const { selection, onChange, onClose } = fillProps;
-			onClick( {
-				selection: Array.isArray( selection )
-					? selection
-					: [ selection ],
-				onChange,
-				onClose,
-			} );
+	const getProps = (
+		fillProps: Fill.Props & VariationQuickUpdateSlotProps
+	) => {
+		const { selection, onChange, onClose } = fillProps;
+		return {
+			selection: Array.isArray( selection ) ? selection : [ selection ],
+			onChange,
+			onClose,
 		};
+	};
+	const createMenuItem = (
+		onClickWithCallbacks: () => void,
+		fillProps: Fill.Props & VariationQuickUpdateSlotProps
+	) => {
+		if ( typeof children === 'function' ) {
+			const childrenWithProps = children( getProps( fillProps ) );
+			return createOrderedChildren( childrenWithProps, order, fillProps );
+		}
+
+		return createOrderedChildren(
+			<MenuItem onClick={ onClickWithCallbacks }>{ children }</MenuItem>,
+			order,
+			fillProps
+		);
+	};
 
 	const createFill = ( updateType: string ) => (
 		<Fill
@@ -60,11 +75,8 @@ export const VariationQuickUpdateMenuItem: React.FC< MenuItemProps > & {
 			name={ getGroupName( group, updateType === MULTIPLE_UPDATE ) }
 		>
 			{ ( fillProps: Fill.Props & VariationQuickUpdateSlotProps ) =>
-				createOrderedChildren(
-					<MenuItem onClick={ handleClick( fillProps ) }>
-						{ children }
-					</MenuItem>,
-					order,
+				createMenuItem(
+					() => onClick( getProps( fillProps ) ),
 					fillProps
 				)
 			}
@@ -95,7 +107,31 @@ VariationQuickUpdateMenuItem.Slot = ( {
 					return null;
 				}
 
-				return <MenuGroup>{ sortFillsByOrder( fills ) }</MenuGroup>;
+				const functionFills = [ ...fills ].filter(
+					( fill ) =>
+						fill[ 0 ] &&
+						fill[ 0 ].props &&
+						typeof fill[ 0 ].props.children === 'function'
+				);
+				const regularFills = fills.filter(
+					( fill ) =>
+						fill[ 0 ] &&
+						fill[ 0 ].props &&
+						typeof fill[ 0 ].props.children !== 'function'
+				);
+
+				const sortedFunctionFills = sortFillsByOrder( functionFills );
+				const sortedRegularFills = sortFillsByOrder( regularFills );
+
+				return (
+					<>
+						{ sortedRegularFills?.props?.children.length > 0 && (
+							<MenuGroup>{ sortedRegularFills }</MenuGroup>
+						) }
+						{ sortedFunctionFills?.props?.children.length > 0 &&
+							sortedFunctionFills }
+					</>
+				);
 			} }
 		</Slot>
 	);
